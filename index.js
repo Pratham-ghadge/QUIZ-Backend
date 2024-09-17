@@ -9,7 +9,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: 'https://quiz-game-deld.vercel.app',
   methods: ['GET', 'POST', 'HEAD', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -20,7 +21,6 @@ const LEADERBOARD_FILE = path.join(__dirname, 'leaderboard.json');
 app.get('/api/leaderboard', async (req, res) => {
   try {
     const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
-    res.header('Access-Control-Allow-Origin', 'https://quiz-game-deld.vercel.app');
     res.json(JSON.parse(data));
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -58,3 +58,5 @@ app.post('/api/leaderboard', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+module.exports = app; // Export the app for Vercel
