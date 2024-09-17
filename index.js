@@ -7,8 +7,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: 'https://quiz-game-deld.vercel.app' // Replace with your frontend URL
+  origin: 'https://quiz-game-deld.vercel.app',
+  methods: ['GET', 'POST', 'HEAD', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 const LEADERBOARD_FILE = path.join(__dirname, 'leaderboard.json');
@@ -17,7 +20,7 @@ const LEADERBOARD_FILE = path.join(__dirname, 'leaderboard.json');
 app.get('/api/leaderboard', async (req, res) => {
   try {
     const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
-    console.log('Leaderboard data:', data); // Add this log statement
+    res.header('Access-Control-Allow-Origin', 'https://quiz-game-deld.vercel.app');
     res.json(JSON.parse(data));
   } catch (error) {
     if (error.code === 'ENOENT') {
