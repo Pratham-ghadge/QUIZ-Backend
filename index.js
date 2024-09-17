@@ -1,10 +1,23 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs').promises;
-const path = require('path');
+const mongoose = require('mongoose');
+require('dotenv').config(); // Ensure environment variables are loaded
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// MongoDB connection URI
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error('MONGO_URI environment variable is not set.');
+  process.exit(1); // Exit the application with an error code
+}
+
+// Connect to MongoDB using Mongoose
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(error => console.error('Failed to connect to MongoDB:', error));
 
 app.use(cors({
   origin: 'https://quiz-game-deld.vercel.app',
@@ -15,57 +28,41 @@ app.use(cors({
 
 app.use(express.json());
 
-const LEADERBOARD_FILE = path.join(__dirname, 'leaderboard.json');
+// Define a schema and model for the leaderboard
+const leaderboardSchema = new mongoose.Schema({
+  name: String,
+  score: Number
+});
+
+const Leaderboard = mongoose.model('Leaderboard', leaderboardSchema);
 
 // Get leaderboard
 app.get('/api/leaderboard', async (req, res) => {
   try {
-    const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
-    res.json(JSON.parse(data));
+    const leaderboard = await Leaderboard.find().sort({ score: -1 }).limit(10);
+    res.json(leaderboard);
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      res.json([]);
-    } else {
-      res.status(500).json({ error: 'Error reading leaderboard' });
-    }
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({ error: 'Error fetching leaderboard' });
   }
 });
 
-// // Update leaderboard
-// app.post('/api/leaderboard', async (req, res) => {
-//   try {
-//     const { name, score } = req.body;
-//     let leaderboard = [];
-    
-//     try {
-//       const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
-//       leaderboard = JSON.parse(data);
-//     } catch (error) {
-//       if (error.code !== 'ENOENT') throw error;
-//     }
-
-//     leaderboard.push({ name, score });
-//     leaderboard.sort((a, b) => b.score - a.score);
-//     leaderboard = leaderboard.slice(0, 10);
-
-//     await fs.writeFile(LEADERBOARD_FILE, JSON.stringify(leaderboard));
-//     res.json(leaderboard);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Error updating leaderboard' });
-//   }
-// });
-
-
-app.post('/api/leaderboard', (req, res) => {
+// Update leaderboard
+app.post('/api/leaderboard', async (req, res) => {
   try {
     const { name, score } = req.body;
-    // Update leaderboard in-memory
-    leaderboard.push({ name, score });
-    leaderboard.sort((a, b) => b.score - a.score);
-    leaderboard = leaderboard.slice(0, 10);
+    const newEntry = { name, score };
 
+    await Leaderboard.updateOne(
+      { name }, // Query to find existing entry
+      { $set: newEntry }, // Update entry
+      { upsert: true } // Create if not exists
+    );
+
+    const leaderboard = await Leaderboard.find().sort({ score: -1 }).limit(10);
     res.json(leaderboard);
   } catch (error) {
+    console.error('Error updating leaderboard:', error);
     res.status(500).json({ error: 'Error updating leaderboard' });
   }
 });
@@ -74,4 +71,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-module.exports = app; // Export the app for Vercel
+module.exports = app;
