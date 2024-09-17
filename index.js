@@ -31,24 +31,39 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
-// Update leaderboard
-app.post('/api/leaderboard', async (req, res) => {
+// // Update leaderboard
+// app.post('/api/leaderboard', async (req, res) => {
+//   try {
+//     const { name, score } = req.body;
+//     let leaderboard = [];
+    
+//     try {
+//       const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
+//       leaderboard = JSON.parse(data);
+//     } catch (error) {
+//       if (error.code !== 'ENOENT') throw error;
+//     }
+
+//     leaderboard.push({ name, score });
+//     leaderboard.sort((a, b) => b.score - a.score);
+//     leaderboard = leaderboard.slice(0, 10);
+
+//     await fs.writeFile(LEADERBOARD_FILE, JSON.stringify(leaderboard));
+//     res.json(leaderboard);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error updating leaderboard' });
+//   }
+// });
+
+
+app.post('/api/leaderboard', (req, res) => {
   try {
     const { name, score } = req.body;
-    let leaderboard = [];
-    
-    try {
-      const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
-      leaderboard = JSON.parse(data);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-
+    // Update leaderboard in-memory
     leaderboard.push({ name, score });
     leaderboard.sort((a, b) => b.score - a.score);
     leaderboard = leaderboard.slice(0, 10);
 
-    await fs.writeFile(LEADERBOARD_FILE, JSON.stringify(leaderboard));
     res.json(leaderboard);
   } catch (error) {
     res.status(500).json({ error: 'Error updating leaderboard' });
