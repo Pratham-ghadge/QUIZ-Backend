@@ -17,6 +17,7 @@ const LEADERBOARD_FILE = path.join(__dirname, 'leaderboard.json');
 app.get('/api/leaderboard', async (req, res) => {
   try {
     const data = await fs.readFile(LEADERBOARD_FILE, 'utf8');
+    console.log('Leaderboard data:', data); // Add this log statement
     res.json(JSON.parse(data));
   } catch (error) {
     if (error.code === 'ENOENT') {
